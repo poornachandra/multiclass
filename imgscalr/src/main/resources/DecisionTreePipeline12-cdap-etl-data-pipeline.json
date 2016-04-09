@@ -1,0 +1,402 @@
+{
+    "artifact": {
+        "name": "cdap-etl-data-pipeline",
+        "version": "3.4.0-SNAPSHOT",
+        "scope": "SYSTEM"
+    },
+    "__ui__": {
+        "nodes": [
+            {
+                "name": "Stream",
+                "plugin": {
+                    "name": "Stream",
+                    "type": "batchsource",
+                    "label": "Stream",
+                    "artifact": {
+                        "name": "core-plugins",
+                        "version": "1.3.0-SNAPSHOT",
+                        "scope": "SYSTEM"
+                    },
+                    "properties": {
+                        "format": "text",
+                        "schema": "{\"type\":\"record\",\"name\":\"etlSchemaBody\",\"fields\":[{\"readonly\":true,\"name\":\"ts\",\"type\":\"long\"},{\"readonly\":true,\"name\":\"headers\",\"type\":{\"type\":\"map\",\"keys\":\"string\",\"values\":\"string\"}},{\"name\":\"body\",\"type\":\"string\"}]}",
+                        "name": "datapoints",
+                        "duration": "1d"
+                    }
+                },
+                "outputSchema": "{\"type\":\"record\",\"name\":\"etlSchemaBody\",\"fields\":[{\"readonly\":true,\"name\":\"ts\",\"type\":\"long\"},{\"readonly\":true,\"name\":\"headers\",\"type\":{\"type\":\"map\",\"keys\":\"string\",\"values\":\"string\"}},{\"name\":\"body\",\"type\":\"string\"}]}",
+                "type": "batchsource",
+                "label": "Stream",
+                "icon": "icon-streams",
+                "_uiPosition": {
+                    "top": "168.1953125px",
+                    "left": "393px"
+                },
+                "description": "Batch source for a stream.",
+                "_backendProperties": {
+                    "schema": {
+                        "name": "schema",
+                        "description": "Optional schema for the body of stream events. Schema is used in conjunction with format to parse stream events. Some formats like the avro format require schema, while others do not. The schema given is for the body of the stream, so the final schema of records output by the source will contain an additional field named 'ts' for the timestamp and a field named 'headers' for the headers as the first and second fields of the schema.",
+                        "type": "string",
+                        "required": false
+                    },
+                    "duration": {
+                        "name": "duration",
+                        "description": "Size of the time window to read with each run of the pipeline. The format is expected to be a number followed by an 's', 'm', 'h', or 'd' specifying the time unit, with 's' for seconds, 'm' for minutes, 'h' for hours, and 'd' for days. For example, a value of '5m' means each run of the pipeline will read 5 minutes of events from the stream.",
+                        "type": "string",
+                        "required": true
+                    },
+                    "name": {
+                        "name": "name",
+                        "description": "Name of the stream. Must be a valid stream name. If it doesn't exist, it will be created.",
+                        "type": "string",
+                        "required": true
+                    },
+                    "format": {
+                        "name": "format",
+                        "description": "Optional format of the stream. Any format supported by CDAP is also supported. For example, a value of 'csv' will attempt to parse stream events as comma-separated values. If no format is given, event bodies will be treated as bytes, resulting in a three-field schema: 'ts' of type long, 'headers' of type map of string to string, and 'body' of type bytes.",
+                        "type": "string",
+                        "required": false
+                    },
+                    "delay": {
+                        "name": "delay",
+                        "description": "Optional delay for reading stream events. The value must be of the same format as the duration value. For example, a duration of '5m' and a delay of '10m' means each run of the pipeline will read events from 15 minutes before its logical start time to 10 minutes before its logical start time. The default value is 0.",
+                        "type": "string",
+                        "required": false
+                    }
+                },
+                "errorCount": 0,
+                "implicitSchema": null,
+                "outputSchemaProperty": "schema",
+                "watchProperty": "format",
+                "selected": false
+            },
+            {
+                "name": "JavaScript",
+                "plugin": {
+                    "name": "JavaScript",
+                    "type": "transform",
+                    "label": "JavaScript",
+                    "artifact": {
+                        "name": "core-plugins",
+                        "version": "1.3.0-SNAPSHOT",
+                        "scope": "SYSTEM"
+                    },
+                    "properties": {
+                        "script": "function transform(input, emitter, context) {\n  var dataPointsArray = input.body.split(\",\");\n  if (dataPointsArray.length === 785) {\n      input[\"dataPoints\"] = dataPointsArray.slice(1).join();\n      input[\"classificationField\"] = dataPointsArray[0];\n      emitter.emit(input);\n  } else {\n    context.getLogger().info(\"invalid record: \" + dataPointsArray.length + \" Array:\" + dataPointsArray.join());    \n  }\n}",
+                        "schema": "{\"type\":\"record\",\"name\":\"etlSchemaBody\",\"fields\":[{\"name\":\"ts\",\"type\":\"long\"},{\"name\":\"headers\",\"type\":{\"type\":\"map\",\"keys\":\"string\",\"values\":\"string\"}},{\"name\":\"body\",\"type\":\"string\"},{\"name\":\"dataPoints\",\"type\":\"string\"},{\"name\":\"classificationField\",\"type\":\"string\"}]}"
+                    }
+                },
+                "outputSchema": "{\"type\":\"record\",\"name\":\"etlSchemaBody\",\"fields\":[{\"name\":\"ts\",\"type\":\"long\"},{\"name\":\"headers\",\"type\":{\"type\":\"map\",\"keys\":\"string\",\"values\":\"string\"}},{\"name\":\"body\",\"type\":\"string\"},{\"name\":\"dataPoints\",\"type\":\"string\"},{\"name\":\"classificationField\",\"type\":\"string\"}]}",
+                "inputSchema": [
+                    {
+                        "name": "ts",
+                        "type": "long",
+                        "nullable": false
+                    },
+                    {
+                        "name": "headers",
+                        "type": {
+                            "type": "map",
+                            "keys": "string",
+                            "values": "string"
+                        },
+                        "nullable": false
+                    },
+                    {
+                        "name": "body",
+                        "type": "string",
+                        "nullable": false
+                    }
+                ],
+                "type": "transform",
+                "label": "JavaScript",
+                "icon": "icon-javascript",
+                "_uiPosition": {
+                    "top": "168.1953125px",
+                    "left": "693px"
+                },
+                "description": "Executes user-provided JavaScript that transforms one record into zero or more records.",
+                "_backendProperties": {
+                    "schema": {
+                        "name": "schema",
+                        "description": "The schema of output objects. If no schema is given, it is assumed that the output schema is the same as the input schema.",
+                        "type": "string",
+                        "required": false
+                    },
+                    "script": {
+                        "name": "script",
+                        "description": "JavaScript defining how to transform input record into zero or more records. The script must implement a function called 'transform', which takes as input a JSON object (representing the input record) emitter object, which can be used to emit records and error messagesand a context object (which contains CDAP metrics, logger and lookup)For example:\n'function transform(input, emitter, context) {\n  if(context.getLookup('blacklist').lookup(input.id) != null) {\n     emitter.emitError({\"errorCode\":31, \"errorMsg\":\"blacklisted id\", \"invalidRecord\": input}); \n  } else {\n     if(input.count < 0) {\n       context.getMetrics().count(\"negative.count\", 1);\n       context.getLogger().debug(\"Received record with negative count\");\n     }\n  input.count = input.count * 1024;\n  emitter.emit(input);   } \n}'\nwill emit an error if the input id is present in blacklist table, else scale the 'count' field by 1024",
+                        "type": "string",
+                        "required": true
+                    },
+                    "lookup": {
+                        "name": "lookup",
+                        "description": "Lookup tables to use during transform. Currently supports KeyValueTable.",
+                        "type": "string",
+                        "required": false
+                    }
+                },
+                "errorCount": 0,
+                "implicitSchema": null,
+                "outputSchemaProperty": "schema",
+                "selected": false
+            },
+            {
+                "name": "DecisionTreeTrainer",
+                "plugin": {
+                    "name": "DecisionTreeTrainer",
+                    "type": "sparksink",
+                    "label": "DecisionTreeTrainer",
+                    "artifact": {
+                        "name": "spark-plugins",
+                        "version": "1.3.0-SNAPSHOT",
+                        "scope": "SYSTEM"
+                    },
+                    "properties": {
+                        "fileSetName": "training12",
+                        "classificationField": "classificationField",
+                        "maxBinCount": "300",
+                        "maxTreeDepth": "10",
+                        "path": "/tmp/",
+                        "numClasses": "10",
+                        "impurity": "entropy",
+                        "dataPoints": "dataPoints"
+                    }
+                },
+                "inputSchema": [
+                    {
+                        "name": "ts",
+                        "type": "long",
+                        "nullable": false
+                    },
+                    {
+                        "name": "headers",
+                        "type": {
+                            "type": "map",
+                            "keys": "string",
+                            "values": "string"
+                        },
+                        "nullable": false
+                    },
+                    {
+                        "name": "body",
+                        "type": "string",
+                        "nullable": false
+                    },
+                    {
+                        "name": "dataPoints",
+                        "type": "string",
+                        "nullable": false
+                    },
+                    {
+                        "name": "classificationField",
+                        "type": "string",
+                        "nullable": false
+                    }
+                ],
+                "type": "sparksink",
+                "label": "DecisionTreeTrainer",
+                "icon": "fa-plug",
+                "_uiPosition": {
+                    "top": "168.1953125px",
+                    "left": "993px"
+                },
+                "description": "Creates a trained model for multi-class classification.",
+                "_backendProperties": {
+                    "fileSetName": {
+                        "name": "fileSetName",
+                        "description": "Name of the FileSet to save a model to.",
+                        "type": "string",
+                        "required": true
+                    },
+                    "classificationField": {
+                        "name": "classificationField",
+                        "description": "Classification field",
+                        "type": "string",
+                        "required": true
+                    },
+                    "maxBinCount": {
+                        "name": "maxBinCount",
+                        "description": "Maximum bin count",
+                        "type": "int",
+                        "required": false
+                    },
+                    "maxTreeDepth": {
+                        "name": "maxTreeDepth",
+                        "description": "Maximum depth of decision tree",
+                        "type": "int",
+                        "required": false
+                    },
+                    "path": {
+                        "name": "path",
+                        "description": "Path of the FileSet to save the model to.",
+                        "type": "string",
+                        "required": true
+                    },
+                    "numClasses": {
+                        "name": "numClasses",
+                        "description": "Number of classes.",
+                        "type": "int",
+                        "required": true
+                    },
+                    "impurity": {
+                        "name": "impurity",
+                        "description": "Impurity",
+                        "type": "string",
+                        "required": false
+                    },
+                    "dataPoints": {
+                        "name": "dataPoints",
+                        "description": "Data points",
+                        "type": "string",
+                        "required": true
+                    }
+                },
+                "errorCount": 0,
+                "selected": false
+            }
+        ],
+        "connections": [
+            {
+                "from": "Stream",
+                "to": "JavaScript"
+            },
+            {
+                "from": "JavaScript",
+                "to": "DecisionTreeTrainer"
+            }
+        ]
+    },
+    "name": "DecisionTreePipeline12",
+    "config": {
+        "connections": [
+            {
+                "from": "Stream",
+                "to": "JavaScript"
+            },
+            {
+                "from": "JavaScript",
+                "to": "DecisionTreeTrainer"
+            }
+        ],
+        "comments": [],
+        "stages": [
+            {
+                "name": "Stream",
+                "plugin": {
+                    "name": "Stream",
+                    "type": "batchsource",
+                    "label": "Stream",
+                    "artifact": {
+                        "name": "core-plugins",
+                        "version": "1.3.0-SNAPSHOT",
+                        "scope": "SYSTEM"
+                    },
+                    "properties": {
+                        "format": "text",
+                        "schema": "{\"type\":\"record\",\"name\":\"etlSchemaBody\",\"fields\":[{\"name\":\"body\",\"type\":\"string\"}]}",
+                        "name": "datapoints",
+                        "duration": "1d"
+                    }
+                },
+                "outputSchema": "{\"type\":\"record\",\"name\":\"etlSchemaBody\",\"fields\":[{\"readonly\":true,\"name\":\"ts\",\"type\":\"long\"},{\"readonly\":true,\"name\":\"headers\",\"type\":{\"type\":\"map\",\"keys\":\"string\",\"values\":\"string\"}},{\"name\":\"body\",\"type\":\"string\"}]}"
+            },
+            {
+                "name": "JavaScript",
+                "plugin": {
+                    "name": "JavaScript",
+                    "type": "transform",
+                    "label": "JavaScript",
+                    "artifact": {
+                        "name": "core-plugins",
+                        "version": "1.3.0-SNAPSHOT",
+                        "scope": "SYSTEM"
+                    },
+                    "properties": {
+                        "script": "function transform(input, emitter, context) {\n  var dataPointsArray = input.body.split(\",\");\n  if (dataPointsArray.length === 785) {\n      input[\"dataPoints\"] = dataPointsArray.slice(1).join();\n      input[\"classificationField\"] = dataPointsArray[0];\n      emitter.emit(input);\n  } else {\n    context.getLogger().info(\"invalid record: \" + dataPointsArray.length + \" Array:\" + dataPointsArray.join());    \n  }\n}",
+                        "schema": "{\"type\":\"record\",\"name\":\"etlSchemaBody\",\"fields\":[{\"name\":\"ts\",\"type\":\"long\"},{\"name\":\"headers\",\"type\":{\"type\":\"map\",\"keys\":\"string\",\"values\":\"string\"}},{\"name\":\"body\",\"type\":\"string\"},{\"name\":\"dataPoints\",\"type\":\"string\"},{\"name\":\"classificationField\",\"type\":\"string\"}]}"
+                    }
+                },
+                "outputSchema": "{\"type\":\"record\",\"name\":\"etlSchemaBody\",\"fields\":[{\"name\":\"ts\",\"type\":\"long\"},{\"name\":\"headers\",\"type\":{\"type\":\"map\",\"keys\":\"string\",\"values\":\"string\"}},{\"name\":\"body\",\"type\":\"string\"},{\"name\":\"dataPoints\",\"type\":\"string\"},{\"name\":\"classificationField\",\"type\":\"string\"}]}",
+                "inputSchema": [
+                    {
+                        "name": "ts",
+                        "type": "long",
+                        "nullable": false
+                    },
+                    {
+                        "name": "headers",
+                        "type": {
+                            "type": "map",
+                            "keys": "string",
+                            "values": "string"
+                        },
+                        "nullable": false
+                    },
+                    {
+                        "name": "body",
+                        "type": "string",
+                        "nullable": false
+                    }
+                ]
+            },
+            {
+                "name": "DecisionTreeTrainer",
+                "plugin": {
+                    "name": "DecisionTreeTrainer",
+                    "type": "sparksink",
+                    "label": "DecisionTreeTrainer",
+                    "artifact": {
+                        "name": "spark-plugins",
+                        "version": "1.3.0-SNAPSHOT",
+                        "scope": "SYSTEM"
+                    },
+                    "properties": {
+                        "fileSetName": "training12",
+                        "classificationField": "classificationField",
+                        "maxBinCount": "300",
+                        "maxTreeDepth": "10",
+                        "path": "/tmp/",
+                        "numClasses": "10",
+                        "impurity": "entropy",
+                        "dataPoints": "dataPoints"
+                    }
+                },
+                "inputSchema": [
+                    {
+                        "name": "ts",
+                        "type": "long",
+                        "nullable": false
+                    },
+                    {
+                        "name": "headers",
+                        "type": {
+                            "type": "map",
+                            "keys": "string",
+                            "values": "string"
+                        },
+                        "nullable": false
+                    },
+                    {
+                        "name": "body",
+                        "type": "string",
+                        "nullable": false
+                    },
+                    {
+                        "name": "dataPoints",
+                        "type": "string",
+                        "nullable": false
+                    },
+                    {
+                        "name": "classificationField",
+                        "type": "string",
+                        "nullable": false
+                    }
+                ]
+            }
+        ],
+        "schedule": "* * * * *",
+        "engine": "mapreduce"
+    }
+}
